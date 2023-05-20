@@ -4,6 +4,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const dbConnect = require("./config/dbConnect");
+const errorHandler = require("./middleware/errorHandler");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const storyRoutes = require("./routes/story");
@@ -29,7 +30,17 @@ app.use(verifyJWT);
 app.use("/user", userRoutes);
 app.use("/story", storyRoutes);
 app.use("/comment", commentRoutes);
-app.use("/reaction",(req,res,next) => { console.log('reaction router'); next()}, reactionRoutes);
+app.use(
+  "/reaction",
+  (req, res, next) => {
+    console.log("reaction router");
+    next();
+  },
+  reactionRoutes
+);
+
+//handle error
+app.use(errorHandler);
 
 mongoose.connection.once("open", () => {
   app.listen(process.env.PORT, () => {
