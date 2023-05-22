@@ -12,7 +12,7 @@ const getComment = async (req, res) => {
     __v : 0
   }
   try {
-    const foundComment = await Comment.findById(commentId,projection);
+    const foundComment = await Comment.findById(commentId,projection).exec();
     if (!foundComment) return res.status(404).json("comment : not found");
     return res.status(200).json(foundComment);
   } catch (err) {

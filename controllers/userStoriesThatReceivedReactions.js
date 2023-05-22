@@ -1,8 +1,10 @@
 const mongoose = require("mongoose");
 const Story = require("../model/Story");
-const Reaction = require("../model/Reaction");
+
 const reactionsRecieved = async (req, res) => {
   const userId = req.user.id;
+  const isValid = mongoose.Types.ObjectId.isValid(userId);
+  if(!isValid) return res.status(400).json('user : id is invalid');
 
   const pipeline = [
     { $match: { authorId: new mongoose.Types.ObjectId(userId) } },

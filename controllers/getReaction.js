@@ -18,7 +18,7 @@ const getReaction = async (req, res) => {
   };
 
   try {
-    const foundReaction = await Reaction.find(filter);
+    const foundReaction = await Reaction.find(filter).exec();
     if (foundReaction.length > 0) return res.status(200).json(foundReaction);
     else return res.status(404).json("data not found");
   } catch (err) {

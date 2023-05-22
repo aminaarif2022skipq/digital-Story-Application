@@ -11,7 +11,6 @@ const updateUser = async (req,res) => {
     const id = req.params.id;
     const { error , value } = requestBodySchema.validate(req.body);
     if(error)  return res.status(400).json({ error: error.details[0].message });
-    if( Object.keys(value).length === 0) return res.sendStatus(400);
 
     try{
         const updatedUser = await User.findByIdAndUpdate(id,{
@@ -20,7 +19,7 @@ const updateUser = async (req,res) => {
             'returnDocument' : 'after',
             'select' : projection
         })
-        res.status(200).json(updatedUser);
+        return res.status(200).json(updatedUser);
     }catch(err){
         res.status(500).json({ message: err.message });
     }

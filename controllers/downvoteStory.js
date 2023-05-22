@@ -25,17 +25,15 @@ const downvoteStory = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    let foundStory = await Story.findByIdAndUpdate(
-      id,
-      {
-        $inc: { downvotes: 1 },
-      },
-      {
-        returnDocument: "after",
-        projection,
-        session,
-      }
-    );
+    const options = { session };
+    let foundStory = await Story.findById(id, projection, options).exec();
+
+    if (!foundStory) throw new Error("story not found");
+    const noOfdownvotes = foundStory.downvotes;
+    foundStory.downvotes += 1;
+    const savedStory = await foundStory.save(options);
+    if (!savedStory || savedStory.downvotes !== noOfdownvotes + 1)
+      throw new Error("story : unsuccessfull updation");
 
     const foundReactionUpvote = await Reaction.findOne(
       {
@@ -44,11 +42,11 @@ const downvoteStory = async (req, res) => {
         reactionType: "upvote",
       },
       null,
-      { session }
-    );
+      options
+    ).exec();
 
     if (!foundReactionUpvote) {
-      await Reaction.create(
+      const newReaction = await Reaction.create(
         [
           {
             storyId: new mongoose.Types.ObjectId(id),
@@ -56,13 +54,20 @@ const downvoteStory = async (req, res) => {
             reactionType: "downvote",
           },
         ],
-        { session }
+        options
       );
+      if (!newReaction) throw new "reaction : creation failed"();
     } else {
       foundReactionUpvote.reactionType = "downvote";
-      await foundReactionUpvote.save({ session });
+      let updatedReaction = await foundReactionUpvote.save(options);
+      if (!updatedReaction || updatedReaction.reactionType !== "downvote") {
+        throw new Error("reaction : unsuccessful update");
+      }
+      const noOfUpvotes = foundStory.upvotes;
       foundStory.upvotes -= 1;
-      foundStory = await foundStory.save();
+      const savedStory = await foundStory.save(options);
+      if (!savedStory || savedStory.upvotes !== noOfUpvotes - 1)
+        throw new Error("story : unsuccessfull updation");
     }
 
     await session.commitTransaction();

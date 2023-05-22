@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const getSingleStory = async (req, res) => {
   const id = req.params.id;
   try {
-    const foundStory = await Story.findById(id);
+    const foundStory = await Story.findById(id).exec();
     if (!foundStory) return res.sendStatus(404);
     //if user is accessing is his own story return the story
     if (foundStory.authorId === req.user.id)

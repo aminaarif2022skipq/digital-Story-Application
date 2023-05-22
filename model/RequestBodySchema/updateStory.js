@@ -5,6 +5,6 @@ const updateStory = Joi.object({
       imgUrl : Joi.string().uri({ scheme: ['https'] }),
       videoUrl : Joi.string().uri({ scheme: ['https'] }),
       status : Joi.string().valid('public','private')
-})
+}).or('title','imgUrl','videoUrl','status');
 
 module.exports = updateStory;

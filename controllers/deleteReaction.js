@@ -18,7 +18,8 @@ const deleteReaction = async (req, res) => {
   };
 
   try {
-      await Reaction.deleteOne(filter);
+      const response = await Reaction.deleteOne(filter);
+      if(response.deletedCount === 0) throw new Error('delete unsuccessfull');
       res.status(200).json("delete : successful");
   } catch (err) {
     return res.status(500).json({ message: err.message });

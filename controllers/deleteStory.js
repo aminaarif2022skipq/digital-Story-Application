@@ -4,13 +4,14 @@ const Comment = require("../model/Comment");
 const Reaction = require("../model/Reaction");
 const deleteStory = async (req, res) => {
   const storyId = req.params.id;
+  let status = 500;
   //verify wether  the id is valid
   const isValid = mongoose.Types.ObjectId.isValid(storyId);
   if (!isValid) return res.status(400).json("invalid story Id");
 
   try {
     //find the story if doesn't exist return 404
-    const foundStory = await Story.findOne({ _id: storyId });
+    const foundStory = await Story.findOne({ _id: storyId }).exec();
     if (!foundStory) return res.sendStatus(404);
 
     if (foundStory.authorId.toString() !== req.user.id)
@@ -21,11 +22,20 @@ const deleteStory = async (req, res) => {
     await session.startTransaction();
     try {
       //first delete all comments for that story
-      await Comment.deleteMany({ storyId }, { session });
+      const responseComm = await Comment.deleteMany({ storyId }, { session }).exec();
+      if(responseComm.deletedCount === 0){
+         console.log('no comment found');
+      }
       // delete all reactions for a story
-      await Reaction.deleteMany({ storyId }, { session });
+      const responseReaction = await Reaction.deleteMany({ storyId }, { session }).exec();
+      if(responseReaction.deletedCount === 0){
+        console.log('no reaction found');
+      }
       // finally delete the story
-      await Story.deleteOne({ _id: storyId }, { session });
+      const response = await Story.deleteOne({ _id: storyId }, { session }).exec();
+      if(response.deletedCount === 0){
+        throw new Error('unsuccessfull story deletion')
+      }
 
       //commit the transaction
       await session.commitTransaction();
@@ -34,7 +44,7 @@ const deleteStory = async (req, res) => {
       res.status(200).json("story successfully deleted");
     } catch (err) {
       await session.abortTransaction();
-      res.status(500).json({ message: err.message });
+      res.status(status).json({ message: err.message });
     } finally {
       await session.endSession();
     }

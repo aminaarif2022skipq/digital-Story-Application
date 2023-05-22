@@ -6,7 +6,7 @@ const getStoryComments = async (req, res) => {
   const isValid = mongoose.Types.ObjectId.isValid(storyId);
   if (!isValid) return res.status(400).json({ message: "story id invalid" });
 
-  const foundStory = await Story.findById(id);
+  const foundStory = await Story.findById(id).exec();
     if (!foundStory) return res.sendStatus(404);
 
   if(foundStory.authorId.toString() !== req.user.id && foundStory.status === 'private')

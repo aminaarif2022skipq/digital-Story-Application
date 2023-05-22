@@ -9,6 +9,7 @@ const createNewStory = async (req, res) => {
   try {
     //create new story
     const newStory = await Story.create(value);
+    if(!newStory) throw new Error('unsucessfull creation operation');
     return res.status(201).json("story : successfully created");
   } catch (err) {
     res.status(500).json({ message: err.message });

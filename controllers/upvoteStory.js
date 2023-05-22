@@ -23,18 +23,15 @@ const upvoteStory = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    let updatedStory = await Story.findByIdAndUpdate(
-      id,
-      {
-        $inc: { upvotes: 1 },
-      },
-      {
-        returnDocument: "after",
-        projection,
-      },
-      { session }
-    );
+    const options = { session };
+    let foundStory = await Story.findById(id, projection, options).exec();
 
+    if (!foundStory) throw new Error("story not found");
+    const noOfUpvotes = foundStory.upvotes;
+    foundStory.upvotes += 1;
+    const savedStory = await foundStory.save(options);
+    if (!savedStory || savedStory.upvotes !== noOfUpvotes + 1)
+      throw new Error("story : unsuccessfull updation");
     const foundReactionDownvote = await Reaction.findOne(
       {
         storyId: new mongoose.Types.ObjectId(id),
@@ -46,7 +43,7 @@ const upvoteStory = async (req, res) => {
     );
 
     if (!foundReactionDownvote) {
-      await Reaction.create(
+      const newReaction = await Reaction.create(
         [
           {
             storyId: new mongoose.Types.ObjectId(id),
@@ -56,15 +53,22 @@ const upvoteStory = async (req, res) => {
         ],
         { session }
       );
+      if (!newReaction) throw new "reaction : creation failed"();
     } else {
       foundReactionDownvote.reactionType = "upvote";
-      await foundReactionDownvote.save({ session });
-      updatedStory.downvotes -= 1;
-      updatedStory = await updatedStory.save();
+      let updatedReaction = await foundReactionDownvote.save(options);
+      if (!updatedReaction || updatedReaction.reactionType !== "upvote") {
+        throw new Error("reaction : unsuccessful update");
+      }
+      const noOfdownvotes = foundStory.downvotes;
+      foundStory.downvotes -= 1;
+      const savedStory = await foundStory.save(options);
+      if (!savedStory || savedStory.downvotes !== noOfdownvotes - 1)
+        throw new Error("story : unsuccessfull updation");
     }
     await session.commitTransaction();
     console.log("transaction committed");
-    res.status(200).json(updatedStory);
+    res.status(200).json(foundStory);
   } catch (err) {
     await session.abortTransaction();
     return res.status(500).json({ message: err.message });

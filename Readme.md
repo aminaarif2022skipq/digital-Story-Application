@@ -1,4 +1,3 @@
+//API DOCUMENTATION
 
-
-
-
+//test deleteStory

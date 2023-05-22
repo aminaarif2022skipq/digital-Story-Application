@@ -14,11 +14,12 @@ const updateComment = async (req,res) => {
         updatedAt : 0
      }
      try{
-        const foundComment = await Comment.findById(commentId);
+        const foundComment = await Comment.findById(commentId,projection).exec();
         if(!foundComment)  return res.status(404).json('comment : not found');
         if(req.user.id === foundComment.authorId.toString()){
              foundComment.text = value.text;
              const updatedComment = await foundComment.save();
+             if(updatedComment.text !== value.text) return res.status(500).json({ message : 'comment : update unsuccessfull'});
              return res.status(200).json(updatedComment);
         } else {
             return res.status(403).json({ message : 'user is not allowed to update this comment'});
